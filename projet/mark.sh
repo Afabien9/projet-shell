@@ -72,4 +72,25 @@ fi
 if ! make clean; then
 note=$(( note - 2 ))
 fi
+
 echo $note
+
+note=$note
+csv_file="note.csv"
+
+if [ -f "readme.txt" ]; then
+contenu=$(cat "readme.txt")
+
+
+nom=$(echo "$contenu" | awk '{print $2}')
+    prenom=$(echo "$contenu" | awk '{print $1}')
+else
+    echo "Erreur : le fichier readme.txt est manquant."
+    exit 1
+fi
+
+if [ ! -f "$csv_file" ]; then
+echo "Nom,Prénom,Note" > "$csv_file"
+fi
+
+echo "'$nom','$prenom',$note" >> "$csv_file"
