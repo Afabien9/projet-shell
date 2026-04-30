@@ -3,6 +3,7 @@ note=2
 facto=(1 1 2 6 24 120 720 5040 40320 362880 )
 check1=0
 header=0
+facto_here=0
 make
 for fichier in ./*; do
     if [ -f "$fichier" ]; then
@@ -14,21 +15,7 @@ for fichier in ./*; do
             echo $nom
             
         elif [[ "$fichier" == *.c ]]; then
-            facto_here=0
-            while IFS= read -r ligne; do
-                if [[ "$ligne" == *"int factorielle"* && $facto_here -eq 0 ]]; then
-                    note=$((note + 2))
-                    facto_here=1
-                fi
-
-                height=${#ligne}
-                if [[ $limit_height -eq 0 ]]; then
-                    if [[ "$height" -gt 80 ]]; then
-                        limit_height=1
-                        note=$((note - 2))
-                    fi
-                fi
-            done < "$fichier"
+            res= $(file_c "$fichier" $facto_here  )
         elif [[ "$fichier" == *.h ]]; then
             header=1
         fi
@@ -58,16 +45,45 @@ done
 if [ "$check1" -eq 10 ]; then
     note=$(( note + 5))
 fi
+Error() 
+{
+    local note=$1
 
-bad_res=$( ./factorielle )
-if [ "$bad_res" = "Erreur: Mauvais nombre de parametres" ]; then
-    note=$((note + 4))
-fi
+    bad_res=$( ./factorielle )
+    if [ "$bad_res" = "Erreur: Mauvais nombre de parametres" ]; then
+        note=$((note + 4))
+    fi
 
-bad_res=$(./factorielle -1 )
-if [ "$bad_res" = "Erreur: nombre negatif" ]; then
-    note=$(( note + 4 ))
-fi
+    bad_res=$(./factorielle -1 )
+    if [ "$bad_res" = "Erreur: nombre negatif" ]; then
+        note=$(( note + 4 ))
+    fi
+
+    echo $note
+}
+file_c()
+{
+    local fichier=$1
+    local facto_here=$2
+
+            while IFS= read -r ligne; do
+                if [[ "$ligne" == *"int factorielle"* && $facto_here -eq 0 ]]; then
+                    note=$((note + 2))
+                    facto_here=1
+                fi
+
+                height=${#ligne}
+                if [[ $limit_height -eq 0 ]]; then
+                    if [[ "$height" -gt 80 ]]; then
+                        limit_height=1
+                        note=$((note - 2))
+                    fi
+                fi
+            done < "$fichier"
+    echo "$note $facto_here"
+}
+
+note=$(Error "$note")
 
 if ! make clean; then
 note=$(( note - 2 ))
