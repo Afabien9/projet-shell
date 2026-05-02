@@ -1,22 +1,21 @@
+#!/bin/bash
+
 limit_height=0
 note=2
-facto=(1 1 2 6 24 120 720 5040 40320 362880 )
+facto=(1 1 2 6 24 120 720 5040 40320 362880)
 check1=0
 header=0
+
+
 make
+
+
 for fichier in ./*; do
     if [ -f "$fichier" ]; then
-        if [[ "$fichier" == *.txt ]]; then
-            read -r ligne < "$fichier"
-            prenom=$(echo "$ligne" | cut -d' ' -f1)
-            nom=$(echo "$ligne" | cut -d' ' -f2)
-            echo $prenom
-            echo $nom
-            
-        elif [[ "$fichier" == *.c ]]; then
+        if [[ "$fichier" == *.c ]]; then
             facto_here=0
             while IFS= read -r ligne; do
-                if [[ "$ligne" == *"int factorielle"* && $facto_here -eq 0 ]]; then
+                if [[ "$ligne" == *"int factorielle( int number )"* && $facto_here -eq 0 ]]; then
                     note=$((note + 2))
                     facto_here=1
                 fi
@@ -35,6 +34,7 @@ for fichier in ./*; do
     fi
 done
 
+
 if [[ $header -eq 0 ]]; then
     note=$((note - 2))
 fi
@@ -44,53 +44,52 @@ for ((i=0; i<10; i++)); do
     res=$(./factorielle "$i")
     if [ "$i" -eq 0 ]; then
         if [ "$res" -eq 1 ]; then
-        note=$((note + 3))
-        check1=$((check1 + 1))
+            note=$((note + 3))
+            check1=$((check1 + 1))
         fi
-
     else
         if [ "$res" -eq "${facto[$i]}" ]; then
-        check1=$((check1 + 1))
+            check1=$((check1 + 1))
         fi
     fi
 done
 
 if [ "$check1" -eq 10 ]; then
-    note=$(( note + 5))
+    note=$((note + 5))
 fi
 
-bad_res=$( ./factorielle )
+
+bad_res=$(./factorielle)
 if [ "$bad_res" = "Erreur: Mauvais nombre de parametres" ]; then
     note=$((note + 4))
 fi
 
-bad_res=$(./factorielle -1 )
+bad_res=$(./factorielle -1)
 if [ "$bad_res" = "Erreur: nombre negatif" ]; then
-    note=$(( note + 4 ))
+    note=$((note + 4))
 fi
 
-if ! make clean; then
-note=$(( note - 2 ))
+# Vérification de la commande make clean
+if ! make clean > /dev/null 2>&1; then
+    note=$((note - 2))
 fi
 
-echo $note
-
-note=$note
 csv_file="note.csv"
 
 if [ -f "readme.txt" ]; then
-contenu=$(cat "readme.txt")
-
-
-nom=$(echo "$contenu" | awk '{print $2}')
+    contenu=$(cat "readme.txt")
+    nom=$(echo "$contenu" | awk '{print $2}')
     prenom=$(echo "$contenu" | awk '{print $1}')
 else
     echo "Erreur : le fichier readme.txt est manquant."
     exit 1
 fi
 
+
 if [ ! -f "$csv_file" ]; then
-echo "Nom,Prénom,Note" > "$csv_file"
+    echo "Nom,Prénom,Note" > "$csv_file"
 fi
 
 echo "'$nom','$prenom',$note" >> "$csv_file"
+
+echo $note
