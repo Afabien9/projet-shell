@@ -4,7 +4,7 @@ limit_height=0
 note=2
 facto=(1 1 2 6 24 120 720 5040 40320 362880 3628800)
 check1=0
-header=0
+header_original_missing=0 
 
 indentation() {
     local ligne=$1
@@ -16,8 +16,8 @@ indentation() {
         return
     fi
 
-    prefix="${ligne%%[^ ]*}" #Supprime tout après le premier
-                            #caractère qui n'est pas un espace
+    prefix="${ligne%%[^ ]*}" 
+                         
     height_space=${#prefix}
 
     if [[ "$ligne" == *"}"* ]]; then
@@ -34,7 +34,13 @@ indentation() {
     echo "$good_space $space"
 }
 
+if [ ! -f "header.h" ]; then
+    touch header.h
+    header_original_missing=1
+fi
+
 make
+
 for fichier in ./*; do
     if [ -f "$fichier" ]; then
         if [[ "$fichier" == *.txt ]]; then
@@ -50,8 +56,8 @@ for fichier in ./*; do
             good_space=1
 
             while IFS= read -r ligne; do
-                ligne="${ligne%$'\r'}" #Permet de ne pas prendre en compte les lignes vides
-                if [[ "$ligne" == *"int factorielle"* && $facto_here -eq 0 ]]; then
+                ligne="${ligne%$'\r'}" 
+                if [[ "$ligne" == *"int factorielle( int number )"* && $facto_here -eq 0 ]]; then
                     note=$((note + 2))
                     echo "fonction facto bonne  BONUS +2"
                     facto_here=1
@@ -75,16 +81,15 @@ for fichier in ./*; do
                     echo "Ligne +80 charac -2"
                 fi
             done < "$fichier"
-
-        elif [[ "$fichier" == *.h ]]; then
-            header=1
         fi
     fi
 done
 
-if [[ $header -eq 0 ]]; then
+
+if [[ $header_original_missing -eq 1 ]]; then
     note=$(( note - 2 ))
     echo "Pas de header -2"
+    rm -f header.h 
 fi
 
 for ((i=0; i<11; i++)); do
@@ -118,9 +123,32 @@ if [ "$bad_res" = "Erreur: nombre negatif" ]; then
     echo "Erreur nb négatif good : +4"
 fi
 
-if ! make clean; then
-    note=$(( note - 2 ))
-    echo "make clean mauvais : -2"
+make clean
+
+if [ -f factorielle ]; then
+    note=$((note - 2))
+    echo "make clean ne supprime pas factorielle"
 fi
+
+note=$note
+csv_file="note.csv"
+
+if [ -f "readme.txt" ]; then
+    contenu=$(cat "readme.txt")
+
+    nom=$(echo "$contenu" | awk '{print $2}')
+    prenom=$(echo "$contenu" | awk '{print $1}')
+else
+    echo "Erreur : le fichier readme.txt est manquant."
+    exit 1
+fi
+
+if [ ! -f "$csv_file" ]; then
+    echo "Nom,Prénom,Note" > "$csv_file"
+fi
+if [[ "$note" -lt 0 ]]; then
+    note=0
+fi
+echo "'$nom','$prenom',$note" >> "$csv_file"
 
 echo "Note finale : $note"
