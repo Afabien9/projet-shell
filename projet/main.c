@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
     printf("Erreur: Mauvais nombre de parametres\n");
     return 1;
   }
-
+  
   int number = atoi(argv[1]);
   if (number < 0) 
   {

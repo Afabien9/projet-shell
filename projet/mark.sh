@@ -1,5 +1,7 @@
+#!/bin/bash
+
 limit_height=0
-note=0
+note=2
 facto=(1 1 2 6 24 120 720 5040 40320 362880 3628800)
 check1=0
 header_original_missing=0 
@@ -36,56 +38,60 @@ if [ ! -f "header.h" ]; then
     touch header.h
     header_original_missing=1
 fi
-if ! make; then
-    $note=0
-else
-    make
-    note=2
 
-    for fichier in ./*; do
-        if [ -f "$fichier" ]; then
-            if [[ "$fichier" == *.txt ]]; then
-                read -r ligne < "$fichier"
-                prenom=$(echo "$ligne" | cut -d' ' -f1)
-                nom=$(echo "$ligne" | cut -d' ' -f2)
-                echo "$prenom"
-                echo "$nom"
+make
 
-            elif [[ "$fichier" == *.c ]]; then
-                facto_here=0
-                space=0
-                good_space=1
+for fichier in ./*; do
+    if [ -f "$fichier" ]; then
+        if [[ "$fichier" == *.txt ]]; then
+            read -r ligne < "$fichier"
+            prenom=$(echo "$ligne" | cut -d' ' -f1)
+            nom=$(echo "$ligne" | cut -d' ' -f2)
+            echo "$prenom"
+            echo "$nom"
 
-                while IFS= read -r ligne; do
-                    ligne="${ligne%$'\r'}" 
-                    if [[ "$ligne" == *"int factorielle( int number )"* && $facto_here -eq 0 ]]; then
-                        note=$((note + 2))
-                        echo "fonction facto bonne  BONUS +2"
-                        facto_here=1
-                    fi
+        elif [[ "$fichier" == *.c ]]; then
+            facto_here=0
+            space=0
+            good_space=1
 
-                    if [[ "$good_space" -eq 1 ]]; then
-                        read good_space space <<< "$(indentation "$ligne" "$space" "$good_space")"
-                    fi
+            while IFS= read -r ligne; do
+                ligne="${ligne%$'\r'}" 
+                if [[ "$ligne" == *"int factorielle"* && $facto_here -eq 0 ]]; then
+                    note=$((note + 2))
+                    echo "fonction facto bonne  BONUS +2"
+                    facto_here=1
+                fi
 
-                    if [[ "$good_space" -eq 0 ]]; then
-                        note=$(( note - 2 ))
-                        good_space=2
-                        echo "Erreur indentation"
-                    fi
+                if [[ "$good_space" -eq 1 ]]; then
+                    read good_space space <<< "$(indentation "$ligne" "$space" "$good_space")"
+                fi
 
-                    height=${#ligne}
-                    if [[ $limit_height -eq 0 && $height -gt 80 ]]; then
-                        limit_height=1
-                        note=$(( note - 2 ))
-                        echo "Ligne +80 charac -2"
-                    fi
-                done < "$fichier"
-            fi
+                if [[ "$good_space" -eq 0 ]]; then
+                    note=$(( note - 2 ))
+                    good_space=2
+                    echo "Erreur indentation"
+                    echo "$ligne"
+                fi
+
+                height=${#ligne}
+                if [[ $limit_height -eq 0 && $height -gt 80 ]]; then
+                    limit_height=1
+                    note=$(( note - 2 ))
+                    echo "Ligne +80 charac -2"
+                fi
+            done < "$fichier"
         fi
-    done
+    fi
+done
 
-    for ((i=0; i<11; i++)); do
+if [[ $header_original_missing -eq 1 ]]; then
+    note=$(( note - 2 ))
+    echo "Pas de header -2"
+    rm -f header.h 
+fi
+
+for ((i=0; i<11; i++)); do
     res=$(./factorielle "$i")
     if [ "$i" -eq 0 ]; then
         if [ "$res" -eq 1 ]; then
@@ -97,34 +103,26 @@ else
             check1=$(( check1 + 1 ))
         fi
     fi
-    done
-
-    bad_res=$(./factorielle)
-    if [ "$bad_res" = "Erreur: Mauvais nombre de parametres" ]; then
-        note=$(( note + 4 ))
-        echo "Erreur nb de paramètres good : +4"
-    fi
-
-    bad_res=$(./factorielle -1)
-    if [ "$bad_res" = "Erreur: nombre negatif" ]; then
-        note=$(( note + 4 ))
-        echo "Erreur nb négatif good : +4"
-    fi
-fi
-
-if [[ $header_original_missing -eq 1 ]]; then
-    note=$(( note - 2 ))
-    echo "Pas de header -2"
-    rm -f header.h 
-fi
+done
 
 if [ "$check1" -eq 10 ]; then
     note=$(( note + 5 ))
     echo "10 Facto good BONUS +5"
 fi
 
+bad_res=$(./factorielle)
+if [ "$bad_res" = "Erreur: Mauvais nombre de parametres" ]; then
+    note=$(( note + 4 ))
+    echo "Erreur nb de paramètres good : +4"
+fi
+
+bad_res=$(./factorielle -1)
+if [ "$bad_res" = "Erreur: nombre negatif" ]; then
+    note=$(( note + 4 ))
+    echo "Erreur nb négatif good : +4"
+fi
+
 if ! make clean; then
-echo $note
     note=$(( note - 2 ))
     echo "make clean mauvais : -2"
 elif [ -f factorielle ]; then
