@@ -85,7 +85,6 @@ for fichier in ./*; do
     fi
 done
 
-
 if [[ $header_original_missing -eq 1 ]]; then
     note=$(( note - 2 ))
     echo "Pas de header -2"
@@ -126,6 +125,9 @@ fi
 if ! make clean; then
     note=$(( note - 2 ))
     echo "make clean mauvais : -2"
+elif [ -f factorielle ]; then
+    note=$((note - 2))
+    echo "make clean ne supprime pas factorielle"
 fi
 
 note=$note
@@ -143,6 +145,10 @@ fi
 
 if [ ! -f "$csv_file" ]; then
     echo "Nom,Prénom,Note" > "$csv_file"
+fi
+
+if [[ "$note" -lt 0 ]]; then
+    note=0
 fi
 
 echo "'$nom','$prenom',$note" >> "$csv_file"
